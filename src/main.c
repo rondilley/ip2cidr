@@ -106,22 +106,13 @@ int main(int argc, char *argv[])
 #ifdef HAVE_GETOPT_LONG
     int option_index = 0;
     static struct option long_options[] = {
-        {"cluster", no_argument, 0, 'c'},
-        {"greedy", no_argument, 0, 'g'},
         {"version", no_argument, 0, 'v'},
         {"debug", required_argument, 0, 'd'},
         {"help", no_argument, 0, 'h'},
-        {"cnum", required_argument, 0, 'n'},
-        {"templates", required_argument, 0, 't'},
-        {"write", required_argument, 0, 'w'},
-        {"match", required_argument, 0, 'm'},
-        {"matchfile", required_argument, 0, 'M'},
-        {"line", required_argument, 0, 'l'},
-        {"linefile", required_argument, 0, 'L'},
         {0, no_argument, 0, 0}};
-    c = getopt_long(argc, argv, "vd:hn:t:w:cCgm:M:l:L:", long_options, &option_index);
+    c = getopt_long(argc, argv, "vd:h", long_options, &option_index);
 #else
-    c = getopt(argc, argv, "vd:htn::w:cgm:M:l:L:");
+    c = getopt(argc, argv, "vd:h");
 #endif
 
     if (c EQ - 1)
@@ -135,68 +126,15 @@ int main(int argc, char *argv[])
       print_version();
       return (EXIT_SUCCESS);
 
-    case 'c':
-      /* enable argument clustering */
-      config->cluster = TRUE;
-      break;
-
     case 'd':
       /* show debig info */
       config->debug = atoi(optarg);
-      break;
-
-    case 'g':
-      /* ignore quotes */
-      config->greedy = TRUE;
-      break;
-
-    case 'n':
-      /* override default cluster count */
-      config->clusterDepth = atoi(optarg);
-      break;
-
-    case 't':
-      /* load template file */
-      if (loadTemplateFile(optarg) != TRUE)
-      {
-        fprintf(stderr, "ERR - Problem while loading template file\n");
-        return (EXIT_FAILURE);
-      }
       break;
 
     case 'h':
       /* show help info */
       print_help();
       return (EXIT_SUCCESS);
-
-    case 'w':
-      /* save templates to file */
-      if ((config->outFile_st = fopen(optarg, "w")) EQ NULL)
-      {
-        fprintf(stderr, "ERR - Unable to open template file for write [%s]\n", optarg);
-        return (EXIT_FAILURE);
-      }
-      break;
-
-    case 'M':
-      /* load match templates from file */
-      config->match = loadMatchTemplates(optarg);
-      break;
-
-    case 'm':
-      /* add template to match list */
-      config->match = addMatchTemplate(optarg);
-      break;
-
-    case 'L':
-      /* load match lines from file and convert to templates */
-      config->match = loadMatchLines(optarg);
-      break;
-
-    case 'l':
-      /* convert match line and add as template */
-      config->match = addMatchLine(optarg);
-      break;
 
     default:
       fprintf(stderr, "Unknown option code [0%o]\n", c);
@@ -242,16 +180,6 @@ int main(int argc, char *argv[])
   while (optind < argc)
   {
     processFile(argv[optind++]);
-  }
-
-  if (config->match)
-  {
-    /* XXX should print match metrict */
-  }
-  else
-  {
-    /* print the templates we have found */
-    showTemplates();
   }
 
   /*
@@ -306,32 +234,14 @@ PRIVATE void print_help(void)
   fprintf(stderr, "syntax: %s [options] filename [filename ...]\n", PACKAGE);
 
 #ifdef HAVE_GETOPT_LONG
-  fprintf(stderr, " -c|--cluster           show invariable fields in output\n");
   fprintf(stderr, " -d|--debug (0-9)       enable debugging info\n");
-  fprintf(stderr, " -g|--greedy            ignore quotes\n");
   fprintf(stderr, " -h|--help              this info\n");
-  fprintf(stderr, " -l|--line {line}       show all lines that match template of {line}\n");
-  fprintf(stderr, " -L|--linefile {fname}  show all the lines that match templates of lines in {fname}\n");
-  fprintf(stderr, " -m|--match {template}  show all lines that match {template}\n");
-  fprintf(stderr, " -M|--matchfile {fname} show all the lines that match templates in {fname}\n");
-  fprintf(stderr, " -n|--cnum {num}        max cluster args [default: %d]\n", MAX_ARGS_IN_FIELD);
-  fprintf(stderr, " -t|--templates {file}  load templates to ignore\n");
   fprintf(stderr, " -v|--version           display version information\n");
-  fprintf(stderr, " -w|--write {file}      save templates to file\n");
   fprintf(stderr, " filename               one or more files to process, use '-' to read from stdin\n");
 #else
-  fprintf(stderr, " -c            show invariable fields in output\n");
   fprintf(stderr, " -d {lvl}      enable debugging info\n");
-  fprintf(stderr, " -g            ignore quotes\n");
   fprintf(stderr, " -h            this info\n");
-  fprintf(stderr, " -l {line}     show all lines that match template of {line}\n");
-  fprintf(stderr, " -L {fname}    show all the lines that match templates of lines in {fname}\n");
-  fprintf(stderr, " -m {template} show all lines that match {template}\n");
-  fprintf(stderr, " -M {fname}    show all the lines that match templates in {fname}\n");
-  fprintf(stderr, " -n {num}      max cluster args [default: %d]\n", MAX_ARGS_IN_FIELD);
-  fprintf(stderrm " -t {file}     load templates to ignore\n");
   fprintf(stderr, " -v            display version information\n");
-  fprintf(stderr, " -w {file}     save templates to file\n");
   fprintf(stderr, " filename      one or more files to process, use '-' to read from stdin\n");
 #endif
 
@@ -346,9 +256,6 @@ PRIVATE void print_help(void)
 
 PRIVATE void cleanup(void)
 {
-  /* free any match templates */
-  cleanMatchList();
-
   if (config->outFile_st != NULL)
     fclose(config->outFile_st);
   XFREE(config->hostname);

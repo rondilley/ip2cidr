@@ -61,12 +61,8 @@
 #endif
 
 #include "../include/sysdep.h"
-#include "hash.h"
 #include "util.h"
 #include "mem.h"
-#include "parser.h"
-#include "bintree.h"
-#include "match.h"
 
 /****
  *
@@ -80,30 +76,12 @@
  *
  ****/
 
-struct Fields_s
-{
-  int count;
-  struct Fields_s *next;
-  struct binTree_s *head;
-};
-
-typedef struct
-{
-  char lBuf[LINEBUF_SIZE];
-  size_t count;
-  struct Fields_s *head;
-} metaData_t;
-
 /****
  *
  * function prototypes
  *
  ****/
 
-int printTemplate(const struct hashRec_s *hashRec);
 int processFile(const char *fName);
-int showTemplates(void);
-int loadTemplateFile(const char *fName);
-char *clusterTemplate(char *template, metaData_t *md, char *oBuf, int bufSize);
 
 #endif /* IP2CIDR_DOT_H */

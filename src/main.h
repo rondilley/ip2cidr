@@ -42,7 +42,7 @@
  *
  ****/
 
-#define PROGNAME "tmpltr"
+#define PROGNAME "ip2cidr"
 #define MAX_ARGS_IN_FIELD 1
 #define ALARM_TIMER 1
 
@@ -65,8 +65,7 @@
 #include "../include/common.h"
 #include "util.h"
 #include "mem.h"
-#include "tmpltr.h"
-#include "match.h"
+#include "ip2cidr.h"
 
 /****
  *
