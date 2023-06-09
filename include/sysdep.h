@@ -47,7 +47,9 @@
 #endif
 
 #include <grp.h>
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 #include <time.h>
 
 #ifdef HAVE_ARPA_INET_H
