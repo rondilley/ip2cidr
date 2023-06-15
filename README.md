@@ -19,11 +19,14 @@ simplest form, pass a text file as an argument and the output
 will be XXX
 
 ```
-ip2cidr v0.1 [Jun  8 2023 - 13:35:58]
+ip2cidr v0.1 [Jun 15 2023 - 12:51:44]
 
 syntax: ip2cidr [options] filename [filename ...]
  -d|--debug (0-9)       enable debugging info
  -h|--help              this info
+ -H|--hbit {bits}       max network bits (default: 31)
+ -l|--lbit {bits}       min network bits (default: 24)
+ -t|--thold {percent}   consolidation threshold (default: 51)
  -v|--version           display version information
  filename               one or more files to process, use '-' to read from stdin
 ```
