@@ -169,6 +169,7 @@ AC_CHECK_HEADERS([libintl.h])
 AC_CHECK_HEADERS([wchar.h])
 
 dnl ############## Function checks
+AC_CHECK_FUNCS([strcspn])
 AC_CHECK_FUNCS([getopt_long])
 AC_CHECK_FUNCS([alarm])
 AC_CHECK_FUNCS([bzero])
@@ -213,6 +214,7 @@ AC_C_INLINE
 AC_TYPE_INT32_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 
 AC_CONFIG_HEADERS(include/config.h)

@@ -46,6 +46,10 @@
 #define MAX_ARGS_IN_FIELD 1
 #define ALARM_TIMER 1
 
+#define DEFAULT_THRESHOLD 0.51
+#define DEFAULT_MIN_BITS 24
+#define DEFAULT_MAX_BITS 31
+
 /****
  *
  * includes

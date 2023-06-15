@@ -99,27 +99,17 @@ typedef unsigned long dword;
 /* prog config */
 
 typedef struct {
-  uid_t starting_uid;
-  uid_t uid;
-  gid_t gid;
-  char *home_dir;
-  char *log_dir;
   FILE *syslog_st;
-  char *hostname;
-  char *domainname;
+  time_t current_time;
   int debug;
-  int greedy;
-  int cluster;
-  int clusterDepth;
-  int chain;
-  int match;
   int mode;
   int facility;
   int priority;
-  int alarm_count;
-  time_t current_time;
+  int verbose;
   pid_t cur_pid;
-  FILE *outFile_st;
+  float threshold;
+  int minBits;
+  int maxBits;
 } Config_t;
 
 #endif	/* end of COMMON_H */

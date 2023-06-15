@@ -1,25 +1,25 @@
 /*****
  *
  * Description: Main Functions
- * 
+ *
  * BSD 3-Clause License
  *
  * Copyright (c) 2008-2023, Ron Dilley
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from
  *    this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -74,10 +74,7 @@ extern char **environ;
 
 int main(int argc, char *argv[])
 {
-  FILE *inFile = NULL, *outFile = NULL;
-  char inBuf[8192];
-  char outFileName[PATH_MAX];
-  PRIVATE int c = 0, i, ret;
+  PRIVATE int c = 0;
 
 #ifndef DEBUG
   struct rlimit rlim;
@@ -96,23 +93,23 @@ int main(int argc, char *argv[])
   /* store current pid */
   config->cur_pid = getpid();
 
-  /* get real uid and gid in prep for priv drop */
-  config->gid = getgid();
-  config->uid = getuid();
-
   while (1)
   {
     int this_option_optind = optind ? optind : 1;
 #ifdef HAVE_GETOPT_LONG
     int option_index = 0;
     static struct option long_options[] = {
-        {"version", no_argument, 0, 'v'},
+        {"verbose", no_argument, 0, 'V'},
+                {"version", no_argument, 0, 'v'},
         {"debug", required_argument, 0, 'd'},
         {"help", no_argument, 0, 'h'},
+        {"hbit", required_argument, 0, 'H'},
+        {"lbit", required_argument, 0, 'l'},
+        {"thold", required_argument, 0, 't'},
         {0, no_argument, 0, 0}};
-    c = getopt_long(argc, argv, "vd:h", long_options, &option_index);
+    c = getopt_long(argc, argv, "Vvd:hH:l:t:", long_options, &option_index);
 #else
-    c = getopt(argc, argv, "vd:h");
+    c = getopt(argc, argv, "Vvd:hH:l:t:");
 #endif
 
     if (c EQ - 1)
@@ -126,6 +123,11 @@ int main(int argc, char *argv[])
       print_version();
       return (EXIT_SUCCESS);
 
+    case 'V':
+      /* enable verbose mode */
+      config->verbose = TRUE;
+      break;
+      
     case 'd':
       /* show debig info */
       config->debug = atoi(optarg);
@@ -136,41 +138,35 @@ int main(int argc, char *argv[])
       print_help();
       return (EXIT_SUCCESS);
 
+    case 'H':
+      /* max network bits */
+      config->maxBits = atoi(optarg);
+      break;
+
+    case 'l':
+      /* min network bits */
+      config->minBits = atoi(optarg);
+      break;
+
+    case 't':
+      /* consolidation threshold */
+      config->threshold = atof(optarg) / 100;
+      break;
+
     default:
       fprintf(stderr, "Unknown option code [0%o]\n", c);
     }
   }
 
-  /* override cluster depth */
-  if ((config->clusterDepth <= 0) | (config->clusterDepth > 10000))
-    config->clusterDepth = MAX_ARGS_IN_FIELD;
+  /* set required defaults if not defined */
+  if (config->threshold EQ 0)
+    config->threshold = DEFAULT_THRESHOLD;
 
-  /* check dirs and files for danger */
+  if ( config->minBits EQ 0)
+    config->minBits = DEFAULT_MIN_BITS;
 
-  if (time(&config->current_time) EQ - 1)
-  {
-    display(LOG_ERR, "Unable to get current time");
-
-    /* cleanup buffers */
-    cleanup();
-    return (EXIT_FAILURE);
-  }
-
-  /* initialize program wide config options */
-  config->hostname = (char *)XMALLOC(MAXHOSTNAMELEN + 1);
-
-  /* get processor hostname */
-  if (gethostname(config->hostname, MAXHOSTNAMELEN) != 0)
-  {
-    display(LOG_ERR, "Unable to get hostname");
-    strcpy(config->hostname, "unknown");
-  }
-
-  config->cur_pid = getpid();
-
-  /* setup current time updater */
-  signal(SIGALRM, ctime_prog);
-  alarm(ALARM_TIMER);
+  if (config->maxBits EQ 0)
+    config->maxBits = DEFAULT_MAX_BITS;
 
   /*
    * get to work
@@ -236,13 +232,19 @@ PRIVATE void print_help(void)
 #ifdef HAVE_GETOPT_LONG
   fprintf(stderr, " -d|--debug (0-9)       enable debugging info\n");
   fprintf(stderr, " -h|--help              this info\n");
+  fprintf(stderr, " -H|--hbit {bits}       max network bits (default: 31)\n");
+  fprintf(stderr, " -l|--lbit {bits}       min network bits (default: 24)\n");
+  fprintf(stderr, " -t|--thold {percent}   consolidation threshold (default: 51)\n");
   fprintf(stderr, " -v|--version           display version information\n");
   fprintf(stderr, " filename               one or more files to process, use '-' to read from stdin\n");
 #else
-  fprintf(stderr, " -d {lvl}      enable debugging info\n");
-  fprintf(stderr, " -h            this info\n");
-  fprintf(stderr, " -v            display version information\n");
-  fprintf(stderr, " filename      one or more files to process, use '-' to read from stdin\n");
+  fprintf(stderr, " -d {lvl}               enable debugging info\n");
+  fprintf(stderr, " -h                     this info\n");
+  fprintf(stderr, " -H {bits}              max network bits (default: 31)\n");
+  fprintf(stderr, " -l {bits}              min network bits (default: 24)\n");
+  frptinf(stderr, " -t|--thold {percent}   consolidation threshold (default: 51)\n");
+  fprintf(stderr, " -v                     display version information\n");
+  fprintf(stderr, " filename               one or more files to process, use '-' to read from stdin\n");
 #endif
 
   fprintf(stderr, "\n");
@@ -256,39 +258,9 @@ PRIVATE void print_help(void)
 
 PRIVATE void cleanup(void)
 {
-  if (config->outFile_st != NULL)
-    fclose(config->outFile_st);
-  XFREE(config->hostname);
 #ifdef MEM_DEBUG
   XFREE_ALL();
 #else
   XFREE(config);
 #endif
-}
-
-/*****
- *
- * interrupt handler (current time)
- *
- *****/
-
-void ctime_prog(int signo)
-{
-  /* disable SIGALRM */
-  signal(SIGALRM, SIG_IGN);
-  /* update current time */
-
-  if (time(&config->current_time) EQ - 1)
-    fprintf(stderr, "ERR - Unable to update current time\n");
-  config->alarm_count++;
-  if (config->alarm_count EQ 60)
-  {
-    reload = TRUE;
-    config->alarm_count = 0;
-  }
-
-  /* reset SIGALRM */
-  signal(SIGALRM, ctime_prog);
-  /* reset alarm */
-  alarm(ALARM_TIMER);
 }
