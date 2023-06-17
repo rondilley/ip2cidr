@@ -76,18 +76,6 @@
 #define MASK_31 0xfffffffe
 #define MASK_32 0xffffffff
 
-PRIVATE uint32_t netMasks[] = {
-    0x00000000, 0x80000000, 0xc0000000, 0xe0000000, 0xf0000000, 0xf8000000, 0xfc000000, 0xfe000000,
-    0xff000000, 0xff800000, 0xffc00000, 0xffe00000, 0xfff00000, 0xfff80000, 0xfffc0000, 0xfffe0000,
-    0xffff0000, 0xffff8000, 0xffffc000, 0xffffe000, 0xfffff000, 0xfffff800, 0xfffffc00, 0xfffffe00,
-    0xffffff00, 0xffffff80, 0xffffffc0, 0xffffffe0, 0xfffffff0, 0xfffffff8, 0xfffffffc, 0xfffffffe,
-    0xffffffff};
-
-PRIVATE uint32_t hostSize[] = {
-    4294967294, 2147483648, 1073741824, 536870912, 268435456, 134217728, 67108864, 33554432, 16777216, 
-    8388608, 4194304, 2097152, 1048576, 524288, 262144, 131072, 65536, 32768, 16384, 8192, 4096, 2048, 
-    1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1};
-
 /****
  *
  * consts & enums

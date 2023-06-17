@@ -236,15 +236,17 @@ PRIVATE void print_help(void)
   fprintf(stderr, " -l|--lbit {bits}       min network bits (default: 24)\n");
   fprintf(stderr, " -t|--thold {percent}   consolidation threshold (default: 51)\n");
   fprintf(stderr, " -v|--version           display version information\n");
+  fprintf(stderr, " -V|--verbose           show additional information\n");
   fprintf(stderr, " filename               one or more files to process, use '-' to read from stdin\n");
 #else
-  fprintf(stderr, " -d {lvl}               enable debugging info\n");
-  fprintf(stderr, " -h                     this info\n");
-  fprintf(stderr, " -H {bits}              max network bits (default: 31)\n");
-  fprintf(stderr, " -l {bits}              min network bits (default: 24)\n");
-  frptinf(stderr, " -t|--thold {percent}   consolidation threshold (default: 51)\n");
-  fprintf(stderr, " -v                     display version information\n");
-  fprintf(stderr, " filename               one or more files to process, use '-' to read from stdin\n");
+  fprintf(stderr, " -d {lvl}       enable debugging info\n");
+  fprintf(stderr, " -h             this info\n");
+  fprintf(stderr, " -H {bits}      max network bits (default: 31)\n");
+  fprintf(stderr, " -l {bits}      min network bits (default: 24)\n");
+  fprintf(stderr, " -t {percent}   consolidation threshold (default: 51)\n");
+  fprintf(stderr, " -v             display version information\n");
+  fprintf(stderr, " -V             show additional information\n");
+  fprintf(stderr, " filename       one or more files to process, use '-' to read from stdin\n");
 #endif
 
   fprintf(stderr, "\n");

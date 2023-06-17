@@ -576,6 +576,8 @@ void *xrealloc_(void *ptr, int size, const char *filename, const int linenumber)
 
 #ifdef MEM_DEBUG
   d_ptr = head;
+  if ( ptr != NULL)
+  {
   while (d_ptr != NULL)
   {
     if (d_ptr->buf_ptr EQ ptr)
@@ -612,7 +614,8 @@ void *xrealloc_(void *ptr, int size, const char *filename, const int linenumber)
   {
     fprintf(stderr, "realloc() called with %p ptr but not found in debug object list at %s:%d\n", ptr, filename, linenumber);
   }
-
+  }
+  
   d_result = malloc(sizeof(struct Mem_s));
   if (d_result EQ NULL)
   {

@@ -6,20 +6,28 @@ You can find the latest information on ip2cidr [here](http://www.uberadmin.com/P
 
 ## What is IP To CIDR (ip2cidr)?
 
-IP To CIDR is a small and fast XXX
+IP To CIDR is a small and fast utility for consolidating lists of IP addresses to
+CIDR blocks.  It is pretty fast and was built to work with 10M+ IP lists.  If you
+have a large IP address list and you want to summarize to network ranges based on
+how densely populated the CIDR is, this tool may be able to help.
 
 ## Why use it?
 
-I built this tool to solve a XXX
+I built this tool to solve a specific problem with large lists of known bad IP
+addresses that needed to be loaded into an ACL for blocking.  Unfortunately, the
+firewall I was using only supported a limited number of CIDRs.  To make it work,
+I needed to consolidate IP addresses into CIDR blocks based on the number of
+IP addresses in a given CIDR.
 
 ## Implementation
 
 IP To CIDR has a simple command lines interface.  In it's
 simplest form, pass a text file as an argument and the output
-will be XXX
+will be all of the lines that are not recognized, any consolidated
+CIDRs and whatever IPs are left over (converted to /32 notation).
 
 ```
-ip2cidr v0.1 [Jun 15 2023 - 12:51:44]
+ip2cidr v0.2 [Jun 17 2023 - 09:20:57]
 
 syntax: ip2cidr [options] filename [filename ...]
  -d|--debug (0-9)       enable debugging info
@@ -34,9 +42,28 @@ syntax: ip2cidr [options] filename [filename ...]
 The debug option is most useful when the tool is compiled
 with the --ENABLE-DEBUG switch.
 
-A typical run of iop2cidr is to pass the IP file as an
-argument and XXX
+A typical run of ip2cidr is to pass the IP file as an
+argument.
 
+```
+% ./ip2cidr ip_list.txt > consolidated_ip_list.txt
+```
+
+Or you can pass the IP addresses via STDIN.
+
+```
+% cat ip_list.txt | ./ip2cidr > consolidated_ip_list.txt
+```
+
+You control the minimum and maximum bitmask along with the percentage of IPs
+in a particular CIDR using command line arguments as indicated in the --help.
+
+To consolidate CIDRs starting at /20 and ending at /30 when at least 75% of
+the IP addresses exist in a given CIDR, use the following arguments:
+
+```
+% ./ip2cidr -l 20 -H 30 -t 75 ip_list.txt > consolidated_ip_list_20_to_30_at_75.txt
+```
 
 ## Security Implications
 
