@@ -27,7 +27,7 @@ will be all of the lines that are not recognized, any consolidated
 CIDRs and whatever IPs are left over (converted to /32 notation).
 
 ```
-ip2cidr v0.2 [Jun 17 2023 - 09:20:57]
+ip2cidr v0.3 [Jun 17 2023 - 09:20:57]
 
 syntax: ip2cidr [options] filename [filename ...]
  -d|--debug (0-9)       enable debugging info

@@ -155,14 +155,14 @@ int processFile(const char *fName)
     {
       /* IPv6 address, not processed */
       if (config->verbose)
-        fprintf(stderr, "Ignoring IPv6 address [%s]\n", inBuf);
+        fprintf(stderr, "IPv6 address [%s] sent to output without processing\n", inBuf);
       printf("%s\n", inBuf);
     }
     else
     {
       /* pass line alone without processing, probably a network range or IPv6 address */
       if (config->verbose)
-        fprintf(stderr, "Ignoring non-IP address [%s]\n", inBuf);
+        fprintf(stderr, "Non-IP address [%s] sent to output without processing\n", inBuf);
       printf("%s\n", inBuf);
     }
   }
@@ -192,6 +192,9 @@ int processFile(const char *fName)
       return (FAILED);
     }
   }
+
+  if (config->verbose)
+    fprintf(stderr, "Sending remaining IP addresses to output\n");
 
   /* print what is left after consolidation */
   for (uint32_t i = 0; i < netList.ipv4Count; ++i)

@@ -77,10 +77,12 @@ int main(int argc, char *argv[])
   PRIVATE int c = 0;
 
 #ifndef DEBUG
+# ifndef MINGW
   struct rlimit rlim;
 
   rlim.rlim_cur = rlim.rlim_max = 0;
   setrlimit(RLIMIT_CORE, &rlim);
+# endif
 #endif
 
   /* setup config */

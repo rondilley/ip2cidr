@@ -120,6 +120,13 @@ case "$host" in
         AC_DEFINE([SYSV_DERIVED],1,SYSV_DERIVED)
         AC_DEFINE([HPUX],1,HPUX)
         ;;
+    *-mingw*)
+        AC_DEFINE([SYSV_DERIVED],1,SYSV_DERIVED)
+        AC_DEFINE([MINGW],1,MINGW)
+        LDFLAGS="${LDFLAGS} -L/c/MinGW/lib -L/c/MinGW/lib/gcc/mingw32/4.6.2 -lmingw32 -lntdll"
+        CFLAGS="${CFLAGS} -I/c/MinGW/include -I/c/MinGW/lib/gcc/mingw32/4.6.2/include"
+        ;;
+
 esac
 
 dnl ############## Header Checks

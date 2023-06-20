@@ -6,3 +6,8 @@ Version 0.2 (May 17, 2023):
 
 * All core features for IPv4 complete.
 
+Version 0.3 (May 20, 2023):
+
+* Minor changes to verbose output
+* Porting to MinGW
+

@@ -5,3 +5,9 @@
 2023-06-17  Ron Dilley <ron.dilley@uberadmin.com>
 
 	* All core features complete.
+
+2023-06-20  Ron Dilley <ron.dilley@uberadmin.com>
+
+	* Minor changes to verbose output
+	* Porting to MinGW
+	

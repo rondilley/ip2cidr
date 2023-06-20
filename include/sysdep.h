@@ -43,10 +43,10 @@
 #include <errno.h>
 
 #ifndef MINGW
-#include <pwd.h>
+# include <pwd.h>
+# include <grp.h>
 #endif
 
-#include <grp.h>
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
 #endif
