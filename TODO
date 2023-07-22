@@ -3,8 +3,8 @@ IP To CIDR (ip2cidr) TODO list
 
 Short-term:
 -----------
-* Port code from wirespy to a command line tool that consolidates IPs to CIDRs
-* Needs to support large IP lists (10M+)
+* Improve unique functionality
+* Add support for processing CIDR blocks
 
 Long-term:
 ----------

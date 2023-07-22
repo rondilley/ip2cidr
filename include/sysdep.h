@@ -79,6 +79,10 @@
 # define ETHERTYPE_IP ETH_P_IP
 #endif
 
+#ifdef HAVE_MATH_H
+# include <math.h>
+#endif
+
 #ifdef HAVE_MEMORY_H
 # include <memory.h>
 #endif

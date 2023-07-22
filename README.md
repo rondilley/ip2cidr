@@ -27,7 +27,7 @@ will be all of the lines that are not recognized, any consolidated
 CIDRs and whatever IPs are left over (converted to /32 notation).
 
 ```
-ip2cidr v0.3 [Jun 17 2023 - 09:20:57]
+ip2cidr v0.4 [Jul 21 2023 - 20:23:55]
 
 syntax: ip2cidr [options] filename [filename ...]
  -d|--debug (0-9)       enable debugging info
@@ -36,11 +36,24 @@ syntax: ip2cidr [options] filename [filename ...]
  -l|--lbit {bits}       min network bits (default: 24)
  -t|--thold {percent}   consolidation threshold (default: 51)
  -v|--version           display version information
+ -V|--verbose           show additional information
  filename               one or more files to process, use '-' to read from stdin
 ```
 
 The debug option is most useful when the tool is compiled
 with the --ENABLE-DEBUG switch.
+
+ip2cidr processes and consolidates IPv4 addresses in octet and CIDR format.  IPv6
+and malformed IP addresses are not consolidated but are passed on to STDOUT without
+any changes.  CIDR blocks that are larger than the minimum mask (see -l|--lbit) are
+not consolidated but are passed on to STDOUT without any changes.  If a CIDR block
+does not start with the first address (e.g., the host id is non-zero), ip2cidr will
+not consolidate and instead will pass the CIDR block to STDOUT without any changes.
+IPv4 CIDR blocks with /32 will be converted to a host IP address in octet format
+and will be consolidated.
+
+Use the verbose switch (see -V|--verbose) to get more information about which entries
+in a file are consolidated and which are passed to STDOUT without any change.
 
 A typical run of ip2cidr is to pass the IP file as an
 argument.

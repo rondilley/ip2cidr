@@ -54,6 +54,13 @@ PRIVATE uint32_t netMasks[] = {
     0xffffff00, 0xffffff80, 0xffffffc0, 0xffffffe0, 0xfffffff0, 0xfffffff8, 0xfffffffc, 0xfffffffe,
     0xffffffff};
 
+PRIVATE uint32_t hostMasks[] = {
+    0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f,
+    0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff,
+    0x0000ffff, 0x0001ffff, 0x0003ffff, 0x0007ffff, 0x000fffff, 0x001fffff, 0x003fffff, 0x007fffff,
+    0x00ffffff, 0x01ffffff, 0x03ffffff, 0x07ffffff, 0x0fffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff,
+    0xffffffff};
+
 PRIVATE uint32_t hostSize[] = {
     4294967294, 2147483648, 1073741824, 536870912, 268435456, 134217728, 67108864, 33554432, 16777216,
     8388608, 4194304, 2097152, 1048576, 524288, 262144, 131072, 65536, 32768, 16384, 8192, 4096, 2048,
@@ -101,8 +108,9 @@ int processFile(const char *fName)
   unsigned int argCount = 0, totArgCount = 0;
   struct in6_addr ip6_addr;
   struct in_addr ip_addr;
-  uint32_t *ipv4List = NULL, ipv4Count = 0, *tmpPtr;
+  uint32_t *ipv4List = NULL, ipv4Count = 0, *tmpPtr, startIp, hostIdCount;
   struct networkList_s netList;
+  int tmpOct1 = 0, tmpOct2 = 0, tmpOct3 = 0, tmpOct4 = 0, tmpMask = 0;
 
   if (config->verbose)
     fprintf(stderr, "Opening [%s] for read\n", fName);
@@ -135,11 +143,11 @@ int processFile(const char *fName)
     {
       /* process IPv4 address */
 
-      /* XXX add to unsorted buffer */
+      /* add to unsorted buffer */
       ipv4Count++;
       if ((tmpPtr = XREALLOC(ipv4List, ipv4Count * sizeof(uint32_t))) EQ NULL)
       {
-        display(LOG_ERR, "Unable to allocate memory for IPv4 address buffer");
+        fprintf(stderr, "Unable to allocate memory for IPv4 address buffer\n");
         if (ipv4List != NULL)
           XFREE(ipv4List);
         return (FAILED);
@@ -158,6 +166,82 @@ int processFile(const char *fName)
         fprintf(stderr, "IPv6 address [%s] sent to output without processing\n", inBuf);
       printf("%s\n", inBuf);
     }
+    else if (sscanf(inBuf, "%d.%d.%d.%d/%d", &tmpOct1, &tmpOct2, &tmpOct3, &tmpOct4, &tmpMask) EQ 5)
+    {
+      /* this could be an IPv4 address with a netmask */
+      if ((tmpOct1 > 0 && tmpOct1 < 256) &&
+          (tmpOct2 > 0 && tmpOct2 < 256) &&
+          (tmpOct3 > 0 && tmpOct3 < 256) &&
+          (tmpOct4 > 0 && tmpOct4 < 256) &&
+          (tmpMask > 0 && tmpMask < 33))
+      {
+        if (tmpMask < config->minBits)
+        {
+          if (config->verbose)
+            fprintf(stderr, "IPv4 CIDR larger than minimum bitmask [%d.%d.%d.%d/%d] sent to output without processing\n", tmpOct1, tmpOct2, tmpOct3, tmpOct4, tmpMask);
+          printf("%s\n", inBuf);
+        }
+        else if (tmpMask EQ 32)
+        {
+          /* just one IP */
+          if (config->verbose)
+            fprintf(stderr, "Converting to host address [%d.%d.%d.%d/%d]\n", tmpOct1, tmpOct2, tmpOct3, tmpOct4, tmpMask);
+
+          sprintf(inBuf, "%d.%d.%d.%d", tmpOct1, tmpOct2, tmpOct3, tmpOct4);
+          inet_pton(AF_INET, inBuf, &ip_addr);
+
+          /* add to unsorted buffer */
+          ipv4Count++;
+          if ((tmpPtr = XREALLOC(ipv4List, ipv4Count * sizeof(uint32_t))) EQ NULL)
+          {
+            fprintf(stderr, "Unable to allocate memory for IPv4 address buffer\n");
+            if (ipv4List != NULL)
+              XFREE(ipv4List);
+            return (FAILED);
+          }
+          ipv4List = tmpPtr;
+          ipv4List[ipv4Count - 1] = ntohl(ip_addr.s_addr);
+        }
+        else
+        {
+          sprintf(inBuf, "%d.%d.%d.%d", tmpOct1, tmpOct2, tmpOct3, tmpOct4);
+          inet_pton(AF_INET, inBuf, &ip_addr);
+          startIp = ntohl(ip_addr.s_addr);
+          hostIdCount = hostSize[tmpMask];
+
+          /* confirm that the CIDR is valid (e.g., the node address is 0) */
+          if ((startIp & hostMasks[32 - tmpMask]) > 0)
+          {
+#ifdef DEBUG
+            if (config->debug >= 3)
+              fprintf(stderr, "DEBUG - Invalid CIDR [%08x][%08x][%08x]\n", startIp, netMasks[tmpMask], startIp & hostMasks[32 - tmpMask]);
+#endif
+
+            if (config->verbose)
+              fprintf(stderr, "CIDR is not valid, host id is not zero [%d.%d.%d.%d/%d] sent to output without processing\n", tmpOct1, tmpOct2, tmpOct3, tmpOct4, tmpMask);
+            printf("%s\n", inBuf);
+          }
+          else
+          {
+            if (config->verbose)
+              fprintf(stderr, "Processing IPv4 CIDR [%d.%d.%d.%d/%d]\n", tmpOct1, tmpOct2, tmpOct3, tmpOct4, tmpMask);
+
+            /* grow IP buffer for CIDR */
+            if ((tmpPtr = XREALLOC(ipv4List, (ipv4Count + hostIdCount) * sizeof(uint32_t))) EQ NULL)
+            {
+              fprintf(stderr, "Unable to allocate memory for IPv4 address buffer\n");
+              if (ipv4List != NULL)
+                XFREE(ipv4List);
+              return (FAILED);
+            }
+            ipv4List = tmpPtr;
+
+            for (uint32_t i = 0; i < hostIdCount; ++i)
+              ipv4List[ipv4Count++] = startIp + i;
+          }
+        }
+      }
+    }
     else
     {
       /* pass line alone without processing, probably a network range or IPv6 address */
@@ -169,15 +253,24 @@ int processFile(const char *fName)
 
   /* sort ipv4 list */
   if (config->verbose)
-    display(LOG_INFO, "Sorting IPv4 List");
+    fprintf(stderr, "Sorting IPv4 List\n");
   quickSort32(ipv4List, 0, ipv4Count - 1);
-
-  /* bitmask summarization */
-  if (config->verbose)
-    display(LOG_INFO, "Consolidating IPs to CIDRs");
 
   netList.ipv4List = ipv4List;
   netList.ipv4Count = ipv4Count;
+
+  /* remove duplicates */
+  if (uniqueIPv4List(&netList) EQ EXIT_FAILURE)
+  {
+    fprintf(stderr, "ERR - Unable to remove duplicate IP addresses\n");
+    if (netList.ipv4List != NULL)
+      XFREE(netList.ipv4List);
+    return (FAILED);
+  }
+
+  /* bitmask summarization */
+  if (config->verbose)
+    fprintf(stderr, "Consolidating IPs to CIDRs\n");
 
   if (config->verbose)
     fprintf(stderr, "Starting IP list size [%d]\n", netList.ipv4Count);
@@ -186,7 +279,7 @@ int processFile(const char *fName)
   {
     if (consolidateIPv4List(&netList, mask) EQ EXIT_FAILURE)
     {
-      display(LOG_ERR, "Problem consolidating to CIDR");
+      fprintf(stderr, "ERR - Problem consolidating to CIDR\n");
       if (netList.ipv4List != NULL)
         XFREE(netList.ipv4List);
       return (FAILED);
@@ -203,12 +296,12 @@ int processFile(const char *fName)
     printf("%s/32\n", inet_ntoa(ip_addr));
   }
 
+  if (config->verbose)
+    fprintf(stderr, "Ending IP list size [%d]\n", netList.ipv4Count);
+
   /* cleanup memory */
   if (netList.ipv4List != NULL)
     XFREE(netList.ipv4List);
-
-  if (config->verbose)
-    display(LOG_INFO, "[%d] IPv4 addresses processed", ipv4Count);
 
   if (config->verbose)
     fprintf(stderr, "Closing [%s]\n", fName);
@@ -235,7 +328,7 @@ int consolidateIPv4List(struct networkList_s *netList, uint32_t mask)
 
   if ((newList = XMALLOC(netList->ipv4Count * sizeof(uint32_t))) EQ NULL)
   {
-    display(LOG_ERR, "Unable to allocate memory for new list");
+    fprintf(stderr, "ERR - Unable to allocate memory for new list\n");
     return (EXIT_FAILURE);
   }
 
@@ -258,8 +351,8 @@ int consolidateIPv4List(struct networkList_s *netList, uint32_t mask)
         mask_addr.s_addr = htonl(curNet);
         sprintf(netAddr, "%s", inet_ntoa(mask_addr));
 #ifdef DEBUG
-        if (config->debug >= 1)
-          display(LOG_DEBUG, "Consolidating to %s/%d (%d)", netAddr, mask, curCount);
+        if (config->debug >= 4)
+          fprintf( stderr, "DEBUG - Consolidating to %s/%d (%d)\n", netAddr, mask, curCount);
 #endif
 
         printf("%s/%d\n", netAddr, mask);
@@ -276,6 +369,55 @@ int consolidateIPv4List(struct networkList_s *netList, uint32_t mask)
       curStart = i;
     }
     curCount++;
+  }
+
+  /* switch to new shorter list */
+  netList->ipv4List = newList;
+  netList->ipv4Count = newListCount;
+
+  /* cleanup old list */
+  if (list != NULL)
+    XFREE(list);
+
+  return (EXIT_SUCCESS);
+}
+
+/****
+ *
+ * consolidate ipv4 list to cidr blocks
+ *
+ ****/
+
+int uniqueIPv4List(struct networkList_s *netList)
+{
+  PRIVATE uint32_t curNet = 0, curCount = 0, curStart = 0, curEnd = 0, network;
+  uint32_t *list = netList->ipv4List;
+  uint32_t *newList, *tmpPtr, newListCount = 0;
+
+  if ((newList = XMALLOC(netList->ipv4Count * sizeof(uint32_t))) EQ NULL)
+  {
+    fprintf(stderr, "ERR - Unable to allocate memory for new list\n");
+    return (EXIT_FAILURE);
+  }
+
+  if (config->verbose)
+    fprintf(stderr, "Removing duplicates\n");
+
+  /* copy the first IP */
+  if (netList->ipv4Count > 0)
+    newList[newListCount++] = list[0];
+
+  for (uint32_t i = 1; i < netList->ipv4Count; ++i)
+    if (list[i] != newList[newListCount - 1])
+      newList[newListCount++] = list[i];
+
+  if (newListCount < netList->ipv4Count)
+  {
+    /* resize the IP list */
+    if ((tmpPtr = XREALLOC(newList, newListCount * sizeof(uint32_t))) EQ NULL)
+      fprintf(stderr, "ERR - Unable to allocate memory for new list\n");
+    else
+      newList = tmpPtr;
   }
 
   /* switch to new shorter list */

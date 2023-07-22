@@ -53,6 +53,7 @@
 #endif
 
 #include "../include/sysdep.h"
+#include <math.h>
 #include "util.h"
 #include "mem.h"
 #include "sort.h"
@@ -104,5 +105,6 @@ struct networkList_s
 
 int processFile(const char *fName);
 int consolidateIPv4List(struct networkList_s *netList, uint32_t mask);
+int uniqueIPv4List(struct networkList_s *netList);
 
 #endif /* IP2CIDR_DOT_H */

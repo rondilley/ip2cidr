@@ -11,3 +11,7 @@
 	* Minor changes to verbose output
 	* Porting to MinGW
 	
+2023-07-21  Ron Dilley <ron.dilley@uberadmin.com>
+
+	* Added CIDR processing for consolidation
+

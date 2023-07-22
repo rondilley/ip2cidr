@@ -11,3 +11,7 @@ Version 0.3 (May 20, 2023):
 * Minor changes to verbose output
 * Porting to MinGW
 
+Version 0.4 (July 21, 2023):
+
+* Added CIDR block input processing and consolidation
+
