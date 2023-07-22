@@ -164,7 +164,7 @@ int processFile(const char *fName)
       /* IPv6 address, not processed */
       if (config->verbose)
         fprintf(stderr, "IPv6 address [%s] sent to output without processing\n", inBuf);
-      printf("%s\n", inBuf);
+      printf("%s # IPv6 address\n", inBuf);
     }
     else if (sscanf(inBuf, "%d.%d.%d.%d/%d", &tmpOct1, &tmpOct2, &tmpOct3, &tmpOct4, &tmpMask) EQ 5)
     {
@@ -179,7 +179,7 @@ int processFile(const char *fName)
         {
           if (config->verbose)
             fprintf(stderr, "IPv4 CIDR larger than minimum bitmask [%d.%d.%d.%d/%d] sent to output without processing\n", tmpOct1, tmpOct2, tmpOct3, tmpOct4, tmpMask);
-          printf("%s\n", inBuf);
+          printf("%s # CIDR too large to consolidate\n", inBuf);
         }
         else if (tmpMask EQ 32)
         {
@@ -219,7 +219,7 @@ int processFile(const char *fName)
 
             if (config->verbose)
               fprintf(stderr, "CIDR is not valid, host id is not zero [%d.%d.%d.%d/%d] sent to output without processing\n", tmpOct1, tmpOct2, tmpOct3, tmpOct4, tmpMask);
-            printf("%s\n", inBuf);
+            printf("%s/%d # CIDR invalid\n", inBuf, tmpMask);
           }
           else
           {
@@ -247,7 +247,7 @@ int processFile(const char *fName)
       /* pass line alone without processing, probably a network range or IPv6 address */
       if (config->verbose)
         fprintf(stderr, "Non-IP address [%s] sent to output without processing\n", inBuf);
-      printf("%s\n", inBuf);
+      printf("%s # unknown format\n", inBuf);
     }
   }
 

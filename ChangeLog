@@ -14,4 +14,4 @@
 2023-07-21  Ron Dilley <ron.dilley@uberadmin.com>
 
 	* Added CIDR processing for consolidation
-
+	* Added comments on why items were not consolidated

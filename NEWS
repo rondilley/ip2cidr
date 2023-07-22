@@ -15,3 +15,8 @@ Version 0.4 (July 21, 2023):
 
 * Added CIDR block input processing and consolidation
 
+Version 0.5 (July 21, 2023):
+
+* Minor bug fix on invalid CIDR output
+* Added comments on why items were not consolidated
+
