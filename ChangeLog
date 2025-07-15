@@ -15,3 +15,10 @@
 
 	* Added CIDR processing for consolidation
 	* Added comments on why items were not consolidated
+
+2025-07-15  Ron Dilley <ron.dilley@uberadmin.com>
+
+	* Minor security enhancements
+	* Added radix sort
+	* Added --enable-hardening switch
+	

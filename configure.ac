@@ -17,6 +17,93 @@ AC_PREFIX_DEFAULT(/usr/local)
 CFLAGS="${CFLAGS} -I. -I.. -I../include `getconf LFS64_CFLAGS`"
 LDFLAGS="${LDFLAGS} `getconf LFS64_LDFLAGS` `getconf LFS64_LIBS`"
 
+dnl ############## Compiler Hardening Options
+
+HARDENING="no"
+AC_ARG_ENABLE(hardening,
+    [  --enable-hardening      Enable compiler hardening flags (recommended)],
+    HARDENING="yes"
+    ,
+    HARDENING="yes")
+
+if test "$HARDENING" = "yes"; then
+    if test "$GCC" = yes; then
+        dnl Stack protection
+        CFLAGS="${CFLAGS} -fstack-protector-strong"
+        CFLAGS="${CFLAGS} -fstack-clash-protection"
+        
+        dnl Buffer overflow detection
+        CFLAGS="${CFLAGS} -D_FORTIFY_SOURCE=2"
+        
+        dnl Position Independent Code for ASLR
+        CFLAGS="${CFLAGS} -fPIE"
+        LDFLAGS="${LDFLAGS} -pie"
+        
+        dnl Control Flow Integrity
+        CFLAGS="${CFLAGS} -fcf-protection=full"
+        
+        dnl Format string protection
+        CFLAGS="${CFLAGS} -Wformat -Wformat-security"
+        
+        dnl Additional security warnings
+        CFLAGS="${CFLAGS} -Wall -Wextra"
+        CFLAGS="${CFLAGS} -Warray-bounds"
+        CFLAGS="${CFLAGS} -Wstack-protector"
+        CFLAGS="${CFLAGS} -Wtrampolines"
+        
+        dnl Linker hardening
+        LDFLAGS="${LDFLAGS} -Wl,-z,relro"
+        LDFLAGS="${LDFLAGS} -Wl,-z,now"
+        LDFLAGS="${LDFLAGS} -Wl,-z,noexecstack"
+        
+        dnl Additional hardening for newer GCC
+        CFLAGS="${CFLAGS} -fstrict-flex-arrays=3"
+        CFLAGS="${CFLAGS} -ftrivial-auto-var-init=zero"
+        
+        echo "Compiler hardening enabled"
+    else
+        echo "Warning: Compiler hardening requires GCC"
+    fi
+fi
+
+dnl ############## Development Hardening (Extra Strict)
+
+DEV_HARDENING="no"
+AC_ARG_ENABLE(dev-hardening,
+    [  --enable-dev-hardening  Enable extra strict hardening for development],
+    DEV_HARDENING="yes"
+    ,)
+
+if test "$DEV_HARDENING" = "yes"; then
+    if test "$GCC" = yes; then
+        dnl AddressSanitizer for memory error detection
+        CFLAGS="${CFLAGS} -fsanitize=address"
+        LDFLAGS="${LDFLAGS} -fsanitize=address"
+        
+        dnl UndefinedBehaviorSanitizer
+        CFLAGS="${CFLAGS} -fsanitize=undefined"
+        LDFLAGS="${LDFLAGS} -fsanitize=undefined"
+        
+        dnl Additional strict warnings
+        CFLAGS="${CFLAGS} -Werror"
+        CFLAGS="${CFLAGS} -Wcast-align"
+        CFLAGS="${CFLAGS} -Wcast-qual"
+        CFLAGS="${CFLAGS} -Wstrict-prototypes"
+        CFLAGS="${CFLAGS} -Wmissing-prototypes"
+        CFLAGS="${CFLAGS} -Wredundant-decls"
+        CFLAGS="${CFLAGS} -Wshadow"
+        CFLAGS="${CFLAGS} -Wpointer-arith"
+        CFLAGS="${CFLAGS} -Wwrite-strings"
+        CFLAGS="${CFLAGS} -Wbad-function-cast"
+        CFLAGS="${CFLAGS} -Wnested-externs"
+        CFLAGS="${CFLAGS} -Winline"
+        
+        echo "Development hardening enabled (includes sanitizers)"
+    else
+        echo "Warning: Development hardening requires GCC"
+    fi
+fi
+
 SPLINT="no"
 AC_ARG_ENABLE(splint,
     [  --enable-splint         Debug the code with splint],
@@ -248,5 +335,7 @@ echo ""
 echo "Enable debugging      : ${DEBUG}"
 echo "Enable mem debugging  : ${MEM_DEBUG}"
 echo "Show mem debugging    : ${SHOW_MEM_DEBUG}"
+echo "Enable hardening      : ${HARDENING}"
+echo "Enable dev hardening  : ${DEV_HARDENING}"
 echo "-----------------------------------------------"
 echo ""

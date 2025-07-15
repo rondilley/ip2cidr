@@ -4,7 +4,7 @@
  *
  * BSD 3-Clause License
  *
- * Copyright (c) 2008-2023, Ron Dilley
+ * Copyright (c) 2008-2025, Ron Dilley
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -124,7 +124,7 @@ int display(int level, char *format, ...)
   PRIVATE int i;
 
   va_start(args, format);
-  vsprintf(tmp_buf, format, args);
+  vsnprintf(tmp_buf, SYSLOG_MAX, format, args);
   if (tmp_buf[strlen(tmp_buf) - 1] == '\n')
   {
     tmp_buf[strlen(tmp_buf) - 1] = 0;

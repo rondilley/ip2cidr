@@ -27,7 +27,7 @@ will be all of the lines that are not recognized, any consolidated
 CIDRs and whatever IPs are left over (converted to /32 notation).
 
 ```
-ip2cidr v0.5 [Jul 21 2023 - 21:50:24]
+ip2cidr v0.6 [Jul 15 2025 - 12:26:48]
 
 syntax: ip2cidr [options] filename [filename ...]
  -d|--debug (0-9)       enable debugging info
@@ -58,13 +58,13 @@ in a file are consolidated and which are passed to STDOUT without any change.
 A typical run of ip2cidr is to pass the IP file as an
 argument.
 
-```
+```sh
 % ./ip2cidr ip_list.txt > consolidated_ip_list.txt
 ```
 
 Or you can pass the IP addresses via STDIN.
 
-```
+```sh
 % cat ip_list.txt | ./ip2cidr > consolidated_ip_list.txt
 ```
 
@@ -74,7 +74,7 @@ in a particular CIDR using command line arguments as indicated in the --help.
 To consolidate CIDRs starting at /20 and ending at /30 when at least 75% of
 the IP addresses exist in a given CIDR, use the following arguments:
 
-```
+```sh
 % ./ip2cidr -l 20 -H 30 -t 75 ip_list.txt > consolidated_ip_list_20_to_30_at_75.txt
 ```
 

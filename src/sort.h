@@ -2,7 +2,7 @@
  *
  * Description: Sort Function Headers
  *
- * Copyright (c) 2009-2023, Ron Dilley
+ * Copyright (c) 2009-2025, Ron Dilley
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -43,12 +43,20 @@
 #include "util.h"
 #include "../include/common.h"
 #include <stdint.h>
+#include <time.h>
 
 /****
  *
  * typedefs and enums
  *
  ****/
+
+typedef struct {
+    time_t start_time;
+    time_t last_progress_time;
+    uint32_t total_elements;
+    uint32_t recursion_calls;
+} progress_info_t;
 
 /****
  *
@@ -58,5 +66,8 @@
 
 uint32_t quickSortPartition32( uint32_t a[], uint32_t low, uint32_t high);
 void quickSort32(uint32_t a[], uint32_t low, uint32_t high);
+void quickSort32WithProgress(uint32_t a[], uint32_t low, uint32_t high, progress_info_t *progress);
+void radixSort32(uint32_t a[], uint32_t n);
+void radixSort32WithProgress(uint32_t a[], uint32_t n, progress_info_t *progress);
 
 #endif /* end of SORT_DOT_H */

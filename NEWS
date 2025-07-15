@@ -20,3 +20,8 @@ Version 0.5 (July 21, 2023):
 * Minor bug fix on invalid CIDR output
 * Added comments on why items were not consolidated
 
+Version 0.6 (July 15, 2025):
+
+* Minor security enhancements
+* Added radix sort
+* Added --enable-hardening switch

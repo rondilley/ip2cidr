@@ -4,7 +4,7 @@
  *
  * BSD 3-Clause License
  *
- * Copyright (c) 2008-2023, Ron Dilley
+ * Copyright (c) 2008-2025, Ron Dilley
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -137,6 +137,15 @@ int processFile(const char *fName)
   {
     /* strip trailing <CR><LF> */
     inBuf[strcspn(inBuf, "\r\n")] = 0;
+    
+    /* Input validation: check line length */
+    size_t lineLength = strlen(inBuf);
+    if (lineLength == 0) {
+      continue; /* Skip empty lines */
+    }
+    if (lineLength >= sizeof(inBuf) - 1) {
+      fprintf(stderr, "WARN - Line too long, truncated: %.100s...\n", inBuf);
+    }
 
     /* test key is IPv4 */
     if (inet_pton(AF_INET, inBuf, &ip_addr) EQ TRUE)
@@ -169,11 +178,12 @@ int processFile(const char *fName)
     else if (sscanf(inBuf, "%d.%d.%d.%d/%d", &tmpOct1, &tmpOct2, &tmpOct3, &tmpOct4, &tmpMask) EQ 5)
     {
       /* this could be an IPv4 address with a netmask */
-      if ((tmpOct1 > 0 && tmpOct1 < 256) &&
-          (tmpOct2 > 0 && tmpOct2 < 256) &&
-          (tmpOct3 > 0 && tmpOct3 < 256) &&
-          (tmpOct4 > 0 && tmpOct4 < 256) &&
-          (tmpMask > 0 && tmpMask < 33))
+      /* Enhanced validation: check for valid IP octets and CIDR mask */
+      if ((tmpOct1 >= 0 && tmpOct1 <= 255) &&
+          (tmpOct2 >= 0 && tmpOct2 <= 255) &&
+          (tmpOct3 >= 0 && tmpOct3 <= 255) &&
+          (tmpOct4 >= 0 && tmpOct4 <= 255) &&
+          (tmpMask >= 0 && tmpMask <= 32))
       {
         if (tmpMask < config->minBits)
         {
@@ -187,7 +197,7 @@ int processFile(const char *fName)
           if (config->verbose)
             fprintf(stderr, "Converting to host address [%d.%d.%d.%d/%d]\n", tmpOct1, tmpOct2, tmpOct3, tmpOct4, tmpMask);
 
-          sprintf(inBuf, "%d.%d.%d.%d", tmpOct1, tmpOct2, tmpOct3, tmpOct4);
+          snprintf(inBuf, sizeof(inBuf), "%d.%d.%d.%d", tmpOct1, tmpOct2, tmpOct3, tmpOct4);
           inet_pton(AF_INET, inBuf, &ip_addr);
 
           /* add to unsorted buffer */
@@ -204,9 +214,16 @@ int processFile(const char *fName)
         }
         else
         {
-          sprintf(inBuf, "%d.%d.%d.%d", tmpOct1, tmpOct2, tmpOct3, tmpOct4);
+          snprintf(inBuf, sizeof(inBuf), "%d.%d.%d.%d", tmpOct1, tmpOct2, tmpOct3, tmpOct4);
           inet_pton(AF_INET, inBuf, &ip_addr);
           startIp = ntohl(ip_addr.s_addr);
+          
+          /* Bounds check for array access */
+          if (tmpMask < 0 || tmpMask > 32) {
+            fprintf(stderr, "ERR - Invalid CIDR mask value: %d\n", tmpMask);
+            printf("%s # Invalid CIDR mask\n", inBuf);
+            continue;
+          }
           hostIdCount = hostSize[tmpMask];
 
           /* confirm that the CIDR is valid (e.g., the node address is 0) */
@@ -227,6 +244,12 @@ int processFile(const char *fName)
               fprintf(stderr, "Processing IPv4 CIDR [%d.%d.%d.%d/%d]\n", tmpOct1, tmpOct2, tmpOct3, tmpOct4, tmpMask);
 
             /* grow IP buffer for CIDR */
+            /* Check for integer overflow before allocation */
+            if (hostIdCount > UINT32_MAX - ipv4Count) {
+              fprintf(stderr, "ERR - Integer overflow in CIDR expansion\n");
+              printf("%s/%d # Integer overflow\n", inBuf, tmpMask);
+              continue;
+            }
             if ((tmpPtr = XREALLOC(ipv4List, (ipv4Count + hostIdCount) * sizeof(uint32_t))) EQ NULL)
             {
               fprintf(stderr, "Unable to allocate memory for IPv4 address buffer\n");
@@ -252,37 +275,70 @@ int processFile(const char *fName)
   }
 
   /* sort ipv4 list */
-  if (config->verbose)
-    fprintf(stderr, "Sorting IPv4 List\n");
-  quickSort32(ipv4List, 0, ipv4Count - 1);
+  if (ipv4Count > 0) {
+      if (config->verbose)
+          fprintf(stderr, "Sorting IPv4 List\n");
+      
+      if (config->verbose && ipv4Count > 100000) {
+          /* Use progress tracking for large datasets */
+          progress_info_t progress;
+          progress.start_time = time(NULL);
+          progress.last_progress_time = progress.start_time;
+          progress.total_elements = ipv4Count;
+          progress.recursion_calls = 0;
+          
+          fprintf(stderr, "Sorting %u IPv4 addresses with progress tracking...\n", ipv4Count);
+          
+          /* Use radix sort for very large datasets as it's faster for integers */
+          if (ipv4Count > 500000) {
+              fprintf(stderr, "Using radix sort for optimal performance...\n");
+              radixSort32WithProgress(ipv4List, ipv4Count, &progress);
+          } else {
+              quickSort32WithProgress(ipv4List, 0, ipv4Count - 1, &progress);
+          }
+          
+          fprintf(stderr, "Sorting complete!\n");
+      } else {
+          /* Use radix sort for large datasets without progress tracking */
+          if (ipv4Count > 10000) {
+              radixSort32(ipv4List, ipv4Count);
+          } else {
+              quickSort32(ipv4List, 0, ipv4Count - 1);
+          }
+      }
+  }
 
   netList.ipv4List = ipv4List;
   netList.ipv4Count = ipv4Count;
 
   /* remove duplicates */
-  if (uniqueIPv4List(&netList) EQ EXIT_FAILURE)
-  {
-    fprintf(stderr, "ERR - Unable to remove duplicate IP addresses\n");
-    if (netList.ipv4List != NULL)
-      XFREE(netList.ipv4List);
-    return (FAILED);
-  }
-
-  /* bitmask summarization */
-  if (config->verbose)
-    fprintf(stderr, "Consolidating IPs to CIDRs\n");
-
-  if (config->verbose)
-    fprintf(stderr, "Starting IP list size [%d]\n", netList.ipv4Count);
-
-  for (int mask = config->minBits; mask <= config->maxBits; ++mask)
-  {
-    if (consolidateIPv4List(&netList, mask) EQ EXIT_FAILURE)
+  if (netList.ipv4Count > 0) {
+    if (uniqueIPv4List(&netList) EQ EXIT_FAILURE)
     {
-      fprintf(stderr, "ERR - Problem consolidating to CIDR\n");
+      fprintf(stderr, "ERR - Unable to remove duplicate IP addresses\n");
       if (netList.ipv4List != NULL)
         XFREE(netList.ipv4List);
       return (FAILED);
+    }
+  }
+
+  /* bitmask summarization */
+  if (netList.ipv4Count > 0) {
+    if (config->verbose)
+      fprintf(stderr, "Consolidating IPs to CIDRs\n");
+
+    if (config->verbose)
+      fprintf(stderr, "Starting IP list size [%d]\n", netList.ipv4Count);
+
+    for (int mask = config->minBits; mask <= config->maxBits; ++mask)
+    {
+      if (consolidateIPv4List(&netList, mask) EQ EXIT_FAILURE)
+      {
+        fprintf(stderr, "ERR - Problem consolidating to CIDR\n");
+        if (netList.ipv4List != NULL)
+          XFREE(netList.ipv4List);
+        return (FAILED);
+      }
     }
   }
 
@@ -335,6 +391,12 @@ int consolidateIPv4List(struct networkList_s *netList, uint32_t mask)
   if (config->verbose)
     fprintf(stderr, "Consolidating /%d\n", mask);
 
+  /* Bounds check for mask parameter */
+  if (mask < 0 || mask > 32) {
+    fprintf(stderr, "ERR - Invalid mask value in consolidation: %u\n", mask);
+    return (EXIT_FAILURE);
+  }
+
   for (uint32_t i = 0; i < netList->ipv4Count; ++i)
   {
     network = netList->ipv4List[i] & netMasks[mask];
@@ -349,7 +411,7 @@ int consolidateIPv4List(struct networkList_s *netList, uint32_t mask)
       if (((float)curCount / (float)hostSize[mask]) > config->threshold)
       {
         mask_addr.s_addr = htonl(curNet);
-        sprintf(netAddr, "%s", inet_ntoa(mask_addr));
+        snprintf(netAddr, sizeof(netAddr), "%s", inet_ntoa(mask_addr));
 #ifdef DEBUG
         if (config->debug >= 4)
           fprintf( stderr, "DEBUG - Consolidating to %s/%d (%d)\n", netAddr, mask, curCount);
